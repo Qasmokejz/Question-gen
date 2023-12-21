@@ -24,6 +24,7 @@ for i in range(len(df)):
     question = curr['Question Prompt']
     ca = curr['Correct Answer']
     answers = curr[2:]
+    # May need to manually change question_type here
     question_type = "multiple_choice_question"
 
     # Create the structured dictionary
