@@ -13,7 +13,6 @@ df = df.drop(columns = ['Usage', 'Notes'])
 # Need to manually drop empty rows here
 df = df.drop(index = [1, 2, 3])
 
-prompt = df['Question Prompt']
 for i in range(len(df)):
     curr = df.iloc[i].dropna()
     print()
