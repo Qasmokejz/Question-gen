@@ -3,17 +3,15 @@ import os
 import json
 
 # Modify as need
-FILE_NAME = "Quiz 12 - Question Bank - LO1A.csv"
-LO = 'LO1A'
+FILE_NAME = "Quiz 12 - Question Bank - LO1D.csv"
+LO = 'LO1D'
 
 # Assuming csv file is formatted as: ['Usage', 'Prompt', 'Solution', 'D0', ..., 'Dn', 'Type', 'Notes']
 # The column names do not need to be exact, this is position based
 
 df = pd.read_csv(FILE_NAME)
-# get the type of question
-type = (df[df.columns[len(df.columns)-2]][1]).lower()
 # drop usage, type, and notes columns
-df = df.drop(columns = [df.columns[0], df.columns[len(df.columns)-2], df.columns[len(df.columns)-1]])
+df = df.drop(columns = [df.columns[0], df.columns[len(df.columns)-1]])
 
 def run():
     # Create main folder
@@ -23,29 +21,33 @@ def run():
             
     for i in range(len(df)):
         curr = df.iloc[i].dropna()
-        print()
-        print(f'===== Question {i+1}, len {len(curr)} =====')
-        print(curr)
 
         try:
             # Sample data
             question = curr[0]
-            ca = curr[1]
-            answers = curr[2:]
+            answers = curr[1:-1]
+            type = curr[-1].lower()
+            type_function = None  # function pointer
+
+            # Visuals
+            print(f'\n===== Question {i+1}, len {len(curr)} =====')
+            print(curr)
+
+            # Manually checking question type
+            if type[0:16] == "multiple choice":
+                type_function = mcq
+            elif type[0:4] == "true":
+                type_function = tf
+            else:
+                print(f'question type {type} currently not supported')
+                continue
         except IndexError:
-            # black bar should cause index error
+            # Black bar should cause index error
             print("Transcription Complete")
             break
 
         # Create the structured dictionary
-        data = {
-            "question_type": type,
-            "answers": [
-                {"correct": True,  "text": ca}
-            ]
-        }
-        for ans in answers:
-            data["answers"].append({"correct": False, "text": ans})
+        data = type_function(answers)
 
         # Create sub folder
         sub_folder_name = LO + f'-0{i+1}'
@@ -62,5 +64,25 @@ def run():
         json_file_path = os.path.join(sub_folder_path, "question.json")
         with open(json_file_path, "w") as json_file:
             json.dump(data, json_file, indent=4)
+
+# helper functions
+def mcq(answers):
+    data = {
+        "type" : "multiple_choice_question",
+        "answers" : [{"correct": True,  "text": answers[0]}]
+    }
+    for ans in answers[1:]:
+        data["answers"].append({"correct": False, "text": ans})
+    return data
+
+def tf(answers):
+    data = {
+        "type" : "true_false_question"
+    }
+    if answers[0].lower() == "true":
+        data["answers"] = True
+    else:
+        data["answers"] = False
+    return data
 
 run()
