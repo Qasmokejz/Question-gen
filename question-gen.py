@@ -3,16 +3,17 @@ import os
 import json
 
 # Modify as need
-FILE_NAME = "Quiz 34 - Question Bank - LO4F - specific.csv"
-LO = 'LO4F-SPECIFIC'
+FILE_NAME = "Quiz 12 - Question Bank - LO1A.csv"
+LO = 'LO1A'
 
-# Assuming csv file contains columns: ['Usage', 'Question Prompt', 'Correct Answer', 'D0', ..., 'Dn', 'Notes']
+# Assuming csv file is formatted as: ['Usage', 'Prompt', 'Solution', 'D0', ..., 'Dn', 'Type', 'Notes']
+# The column names do not need to be exact, this is position based
 
 df = pd.read_csv(FILE_NAME)
-df = df.drop(columns = ['Usage', 'Notes'])
-
-# Need to manually drop empty rows here
-df = df.drop(index = [0], axis = 0)
+# get the type of question
+type = (df[df.columns[len(df.columns)-2]][1]).lower()
+# drop usage, type, and notes columns
+df = df.drop(columns = [df.columns[0], df.columns[len(df.columns)-2], df.columns[len(df.columns)-1]])
 
 def run():
     # Create main folder
@@ -26,15 +27,19 @@ def run():
         print(f'===== Question {i+1}, len {len(curr)} =====')
         print(curr)
 
-        # Sample data
-        question = curr['Question Prompt']
-        ca = curr['Correct Answer']
-        answers = curr[2:]
-        question_type = "multiple_choice_question"
+        try:
+            # Sample data
+            question = curr[0]
+            ca = curr[1]
+            answers = curr[2:]
+        except IndexError:
+            # black bar should cause index error
+            print("Transcription Complete")
+            break
 
         # Create the structured dictionary
         data = {
-            "question_type": question_type,
+            "question_type": type,
             "answers": [
                 {"correct": True,  "text": ca}
             ]
