@@ -21,8 +21,8 @@ The input CSV must have the column format as: `['Anything', 'Prompt', 'Solution'
 - Solution and `D0-Dn` specifications:
     - MCQ: `D0-Dn` will be any other non-solution options for MCQ
     - T/F: Put True or False in solution and leave `D0-Dn` empty for TF
-    - FIMBQ: List the correct answers in `'Solution'` in corresponding order to the blanks, separate them with a `;`
+    - FIMBQ: List the correct answers in `'Solution'` in corresponding order to the blanks, separate them with a `;` or a newline. Format should be `[name_of_blank] = answer` or `[name_of_blank]: answer`
 - Each question should be on a new row
     - Generation will terminate when hitting a completely empty row or end of file
 
-The path to directory can be anything, with the last folder as the name of the folder to be created. For example: `folder1/folder2/folder3` will find the directory `folder1/folder2`, create a directory called `folder3` and place all the generated questions there. to If no input is given, it will create a directory called `qgen` in the currect directory and put all the converted questions in there.
+The path to directory can be anything, with the last folder as the name of the folder to be created. For example: `folder1/folder2/folder3` will find the directory `folder1/folder2`, create a directory called `folder3` and place all the generated questions there. to If no input is given, it will create a directory called `qgen` in the currect directory and put all the converted questions in there. Do note that this script WILL overwrite existing directories by the same name.

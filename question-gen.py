@@ -35,11 +35,11 @@ def run(FILE_NAME, PATH):
             print(curr)
 
             # Manually checking question type
-            if type is "multiple choice":
+            if type == "multiple choice":
                 type_function = mcq
-            elif type is "true/false":
+            elif type == "true/false":
                 type_function = tf
-            elif type is "fill in multiple blanks":
+            elif type == "fill in multiple blanks":
                 type_function = fimbq
             else:
                 print(f'question type {type} currently not supported')
@@ -54,9 +54,7 @@ def run(FILE_NAME, PATH):
 
         # Create sub folder
         sub_folder_name = LO + f'-0{i+1}'
-        print(sub_folder_name)
         sub_folder_path = os.path.join(PATH, sub_folder_name)
-        print(PATH, sub_folder_path)
         if not os.path.exists(sub_folder_path):
             os.makedirs(sub_folder_path)
 
@@ -73,7 +71,7 @@ def run(FILE_NAME, PATH):
 # helper functions
 def mcq(answers):
     data = {
-        "type" : "multiple_choice_question",
+        "question_type" : "multiple_choice_question",
         "answers" : [{"correct": True,  "text": answers[0]}]
     }
     for ans in answers[1:]:
@@ -82,7 +80,7 @@ def mcq(answers):
 
 def tf(answers):
     data = {
-        "type" : "true_false_question"
+        "question_type" : "true_false_question"
     }
     if answers[0].lower() == "true":
         data["answers"] = True
@@ -92,14 +90,13 @@ def tf(answers):
 
 def fimbq(answers):
     data = {
-        "type" : "fill_in_multiple_blanks_question",
+        "question_type" : "fill_in_multiple_blanks_question",
         "answers" : dict()
     }
-    ca = answers[0].split(';')
+    ca = re.split(r'[\n;]', answers[0])
     # sample_answer = "[p_marg] = 0.25"
-    pattern = r"\[(.*?)\] = (.*)"
-    for ans in ca:
-        m = re.search(pattern, ans)
+    for ans in ca: 
+        m = re.fullmatch(r"\[(.+?)\] *[:=] *(.+?)", ans)
         if m:
             data["answers"][m[1]] = m[2]
     return data
