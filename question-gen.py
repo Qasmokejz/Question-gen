@@ -1,23 +1,23 @@
 import pandas as pd
 import os
 import json
-
-# Modify as need
-FILE_NAME = "Quiz 12 - Question Bank - LO1D.csv"
-LO = 'LO1D'
+import sys, getopt
 
 # Assuming csv file is formatted as: ['Usage', 'Prompt', 'Solution', 'D0', ..., 'Dn', 'Type', 'Notes']
 # The column names do not need to be exact, this is position based
 
-df = pd.read_csv(FILE_NAME)
-# drop usage, type, and notes columns
-df = df.drop(columns = [df.columns[0], df.columns[len(df.columns)-1]])
+def run(FILE_NAME, PATH):
+    df = pd.read_csv(FILE_NAME)
+    # drop usage, type, and notes columns
+    df = df.drop(columns = [df.columns[0], df.columns[len(df.columns)-1]])
 
-def run():
     # Create main folder
-    main_folder_name = LO
-    if not os.path.exists(main_folder_name):
-        os.makedirs(main_folder_name)
+    if (PATH.rfind("/") > 0):
+        LO = PATH[PATH.rfind("/")+1:]
+    else:
+        LO = PATH
+    if not os.path.exists(PATH):
+        os.makedirs(PATH)
             
     for i in range(len(df)):
         curr = df.iloc[i].dropna()
@@ -36,7 +36,7 @@ def run():
             # Manually checking question type
             if type[0:16] == "multiple choice":
                 type_function = mcq
-            elif type[0:4] == "true":
+            elif type[0:10] == "true/false":
                 type_function = tf
             else:
                 print(f'question type {type} currently not supported')
@@ -51,7 +51,9 @@ def run():
 
         # Create sub folder
         sub_folder_name = LO + f'-0{i+1}'
-        sub_folder_path = os.path.join(main_folder_name, sub_folder_name)
+        print(sub_folder_name)
+        sub_folder_path = os.path.join(PATH, sub_folder_name)
+        print(PATH, sub_folder_path)
         if not os.path.exists(sub_folder_path):
             os.makedirs(sub_folder_path)
 
@@ -85,4 +87,35 @@ def tf(answers):
         data["answers"] = False
     return data
 
-run()
+if __name__ == "__main__":
+    help = """
+\nQUESTION GENERATOR supplimental to QUIZGEN
+    -i: path to input CSV, ensure that CSV is formatted correctly
+    -p: path to output directory (to be created)
+    -h, --help: this page
+\n"""
+    FILE_NAME = None
+    PATH = "qgen"
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hi:p:", ["help"])
+    except getopt.GetoptError as err:
+        # print help information and exit
+        print(err)  # will print something like "option -a not recognized"
+        print(help)
+        sys.exit(2)
+    for o, a in opts:
+        if o in ["-h", "--help"]:
+            print(help)
+            sys.exit(1)
+        elif o in ["-i"]:
+            FILE_NAME = a
+        elif o in ["-p"]:
+            PATH = a
+        else:
+            print(help)
+            sys.exit(2)
+    if FILE_NAME is None or PATH is None:
+        print("Please specify a input csv file.")
+        print(help)
+        sys.exit(2) 
+    run(FILE_NAME, PATH)
