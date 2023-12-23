@@ -96,7 +96,7 @@ def fimbq(answers):
     ca = re.split(r'[\n;]', answers[0])
     # sample_answer = "[p_marg] = 0.25"
     for ans in ca: 
-        m = re.fullmatch(r"\[(.+?)\] *[:=] *(.+?)", ans)
+        m = re.search(r"\[(.+?)\] *[:=] *(.+?)", ans)
         if m:
             data["answers"][m[1]] = m[2]
     return data
