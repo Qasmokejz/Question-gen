@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import json
 import sys, getopt
+import re
 
 # Assuming csv file is formatted as: ['Usage', 'Prompt', 'Solution', 'D0', ..., 'Dn', 'Type', 'Notes']
 # The column names do not need to be exact, this is position based
@@ -34,10 +35,12 @@ def run(FILE_NAME, PATH):
             print(curr)
 
             # Manually checking question type
-            if type[0:16] == "multiple choice":
+            if type is "multiple choice":
                 type_function = mcq
-            elif type[0:10] == "true/false":
+            elif type is "true/false":
                 type_function = tf
+            elif type is "fill in multiple blanks":
+                type_function = fimbq
             else:
                 print(f'question type {type} currently not supported')
                 continue
@@ -85,6 +88,20 @@ def tf(answers):
         data["answers"] = True
     else:
         data["answers"] = False
+    return data
+
+def fimbq(answers):
+    data = {
+        "type" : "fill_in_multiple_blanks_question",
+        "answers" : dict()
+    }
+    ca = answers[0].split(';')
+    # sample_answer = "[p_marg] = 0.25"
+    pattern = r"\[(.*?)\] = (.*)"
+    for ans in ca:
+        m = re.search(pattern, ans)
+        if m:
+            data["answers"][m[1]] = m[2]
     return data
 
 if __name__ == "__main__":
