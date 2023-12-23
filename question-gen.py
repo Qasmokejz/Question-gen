@@ -1,104 +1,60 @@
 import pandas as pd
 import os
 import json
+import sys, getopt
 import re
 
-# Modify as need
-FILE_NAME = "Quiz 34 - Question Bank - LO4B.csv"
-LO = 'LO4B'
-# Supported question types: "fill_in_multiple_blanks_question", "multiple_choice_question" 
-QUESTION_TYPE =  "fill_in_multiple_blanks_question"
+# Assuming csv file is formatted as: ['Usage', 'Prompt', 'Solution', 'D0', ..., 'Dn', 'Type', 'Notes']
+# The column names do not need to be exact, this is position based
 
-# Assuming csv file contains columns: ['Usage', 'Question Prompt', 'Correct Answer', 'D0', ..., 'Dn', 'Notes']
-df = pd.read_csv(FILE_NAME)
-df = df.drop(columns = [df.columns[0], df.columns[-1]])
+def run(FILE_NAME, PATH):
+    df = pd.read_csv(FILE_NAME)
+    # drop usage, type, and notes columns
+    df = df.drop(columns = [df.columns[0], df.columns[len(df.columns)-1]])
 
-# Need to manually drop empty rows here
-df = df.drop(index = [i for i in range(1, len(df))], axis = 0)
-
-def run():
-    if QUESTION_TYPE == "multiple_choice_question":
-        run_mcq()
-    elif QUESTION_TYPE == "fill_in_multiple_blanks_question":
-        run_fimbq()
-
-def run_fimbq():
     # Create main folder
-    main_folder_name = LO
-    if not os.path.exists(main_folder_name):
-        os.makedirs(main_folder_name)
+    if (PATH.rfind("/") > 0):
+        LO = PATH[PATH.rfind("/")+1:]
+    else:
+        LO = PATH
+    if not os.path.exists(PATH):
+        os.makedirs(PATH)
             
     for i in range(len(df)):
         curr = df.iloc[i].dropna()
-        print()
-        print(f'===== Question {i+1}, len {len(curr)} =====')
-        print(curr)
 
-        # Sample data
-        question = curr['Question Prompt']
-        ca = curr['Correct Answer'].split(';')
-        question_type = "fill_in_multiple_blanks_question"
-        
+        try:
+            # Sample data
+            question = curr[0]
+            answers = curr[1:-1]
+            type = curr[-1].lower()
+            type_function = None  # function pointer
+
+            # Visuals
+            print(f'\n===== Question {i+1}, len {len(curr)} =====')
+            print(curr)
+
+            # Manually checking question type
+            if type == "multiple choice":
+                type_function = mcq
+            elif type == "true/false":
+                type_function = tf
+            elif type == "fill in multiple blanks":
+                type_function = fimbq
+            else:
+                print(f'question type {type} currently not supported')
+                continue
+        except IndexError:
+            # Black bar should cause index error
+            print("Transcription Complete")
+            break
+
         # Create the structured dictionary
-        data = {
-            "question_type": question_type,
-            "answers": dict()
-        }
-        
-        # sample_answer = "[p_marg] = 0.25"
-        pattern = r"\[(.*?)\] = (.*)"
-        for ans in ca:
-            m = re.search(pattern, ans)
-            if m:
-                data["answers"][m[1]] = m[2]
+        data = type_function(answers)
 
         # Create sub folder
         sub_folder_name = LO + f'-0{i+1}'
-        sub_folder_path = os.path.join(main_folder_name, sub_folder_name)
-        if not os.path.exists(sub_folder_path):
-            os.makedirs(sub_folder_path)
-
-        # Write question to MD file
-        md_file_path = os.path.join(sub_folder_path, "prompt.md")
-        with open(md_file_path, "w") as md_file:
-            md_file.write(question)
-
-        # Write answers to JSON file
-        json_file_path = os.path.join(sub_folder_path, "question.json")
-        with open(json_file_path, "w") as json_file:
-            json.dump(data, json_file, indent=4)
-            
-def run_mcq():
-    # Create main folder
-    main_folder_name = LO
-    if not os.path.exists(main_folder_name):
-        os.makedirs(main_folder_name)
-            
-    for i in range(len(df)):
-        curr = df.iloc[i].dropna()
-        print()
-        print(f'===== Question {i+1}, len {len(curr)} =====')
-        print(curr)
-
-        # Sample data
-        question = curr['Question Prompt']
-        ca = curr['Correct Answer']
-        answers = curr[2:]
-        question_type = "multiple_choice_question"
-        
-        # Create the structured dictionary
-        data = {
-            "question_type": question_type,
-            "answers": [
-                {"correct": True,  "text": ca}
-            ]
-        }
-        for ans in answers:
-            data["answers"].append({"correct": False, "text": ans})
-
-        # Create sub folder
-        sub_folder_name = LO + f'-0{i+1}'
-        sub_folder_path = os.path.join(main_folder_name, sub_folder_name)
+        sub_folder_path = os.path.join(PATH, sub_folder_name)
         if not os.path.exists(sub_folder_path):
             os.makedirs(sub_folder_path)
 
@@ -112,4 +68,68 @@ def run_mcq():
         with open(json_file_path, "w") as json_file:
             json.dump(data, json_file, indent=4)
 
-run()
+# helper functions
+def mcq(answers):
+    data = {
+        "question_type" : "multiple_choice_question",
+        "answers" : [{"correct": True,  "text": answers[0]}]
+    }
+    for ans in answers[1:]:
+        data["answers"].append({"correct": False, "text": ans})
+    return data
+
+def tf(answers):
+    data = {
+        "question_type" : "true_false_question"
+    }
+    if answers[0].lower() == "true":
+        data["answers"] = True
+    else:
+        data["answers"] = False
+    return data
+
+def fimbq(answers):
+    data = {
+        "question_type" : "fill_in_multiple_blanks_question",
+        "answers" : dict()
+    }
+    ca = re.split(r'[\n;]', answers[0])
+    # sample_answer = "[p_marg] = 0.25"
+    for ans in ca: 
+        m = re.search(r"\[(.+?)\] *[:=] *(.+?)", ans)
+        if m:
+            data["answers"][m[1]] = m[2]
+    return data
+
+if __name__ == "__main__":
+    help = """
+\nQUESTION GENERATOR supplimental to QUIZGEN
+    -i: path to input CSV, ensure that CSV is formatted correctly
+    -p: path to output directory (to be created)
+    -h, --help: this page
+\n"""
+    FILE_NAME = None
+    PATH = "qgen"
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hi:p:", ["help"])
+    except getopt.GetoptError as err:
+        # print help information and exit
+        print(err)  # will print something like "option -a not recognized"
+        print(help)
+        sys.exit(2)
+    for o, a in opts:
+        if o in ["-h", "--help"]:
+            print(help)
+            sys.exit(1)
+        elif o in ["-i"]:
+            FILE_NAME = a
+        elif o in ["-p"]:
+            PATH = a
+        else:
+            print(help)
+            sys.exit(2)
+    if FILE_NAME is None or PATH is None:
+        print("Please specify a input csv file.")
+        print(help)
+        sys.exit(2) 
+    run(FILE_NAME, PATH)
