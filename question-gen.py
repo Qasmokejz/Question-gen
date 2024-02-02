@@ -4,25 +4,25 @@ import json
 import re
 
 # Modify as need
-FILE_NAME = "Quiz 56 - Question Bank - LO6F-M.csv"
-LO = 'LO6F-M'
+FILE_NAME = "CSE40 Math Worksheet 1 - MW1Q06.csv"
+LO = 'MW1Q06'
 # Supported question types:
 #    "fill_in_multiple_blanks_question",
 #    "multiple_choice_question",
 #    "true_false_question",
 #    "short_answer_question"
     
-QUESTION_TYPE =  "short_answer_question"
+QUESTION_TYPE =  "multiple_choice_question"
 
 df = pd.read_csv(FILE_NAME)
 # for tf
 # df = df.drop(columns = [df.columns[0], df.columns[2], df.columns[-1]])
 
 # for mcq
-df = df.drop(columns = [df.columns[0], df.columns[-1]])
+df = df.drop(columns = [df.columns[0], 'Image', df.columns[-1], df.columns[-2], df.columns[-3]])
 
 # Need to manually drop empty rows here
-df = df.drop(index = [0], axis = 0)
+# df = df.drop(index = [0], axis = 0)
 
 def run():
     if QUESTION_TYPE == "multiple_choice_question":
@@ -93,8 +93,8 @@ def run_mcq():
         print(curr)
 
         # Sample data
-        question = curr['Question Prompt']
-        ca = curr['Correct Answer']
+        question = curr['Prompt']
+        ca = curr['Solution']
         answers = curr[2:]
         question_type = "multiple_choice_question"
         
@@ -102,11 +102,11 @@ def run_mcq():
         data = {
             "question_type": question_type,
             "answers": [
-                {"correct": True,  "text": ca}
+                {"correct": True,  "text": str(ca)}
             ]
         }
         for ans in answers:
-            data["answers"].append({"correct": False, "text": ans})
+            data["answers"].append({"correct": False, "text": str(ans)})
 
         # Create sub folder
         sub_folder_name = LO + f'-0{i+1}'
